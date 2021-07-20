@@ -16,8 +16,11 @@ public class Workers {
         factory.setHost("localhost");
         Connection connection = factory.newConnection();
         Channel channel = connection.createChannel();
-        channel.queueDeclare(TASK_QUEUE_NAME, false, false, false, null);
+        //保存队列
+        channel.queueDeclare(TASK_QUEUE_NAME, true, false, false, null);
         System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
+        //配合autoAck=false使用，每次只接受一个消息
+        channel.basicQos(1);
         DeliverCallback deliverCallback = (consumerTag, delivery) -> {
             String message = new String(delivery.getBody(), "UTF-8");
             System.out.println(" [x] Received '" + message + "'");
@@ -29,7 +32,9 @@ public class Workers {
                 System.out.println("[x] Done");
             }
         };
-        boolean autoAck = true;
+        //如果receiver挂了，会传递挂了的信息，这个信息不会被sender删除
+        //也许实际使用中，要根据业务情况传递true或者false
+        boolean autoAck = false;
         channel.basicConsume(TASK_QUEUE_NAME, autoAck, deliverCallback, consumerTag -> { });
     }
 
